@@ -119,8 +119,11 @@ namespace lcos {
                         << hpx::actions::detail::get_action_name<action_type>()
                         << ", " << id << ") args(" << sizeof...(Ts) << ")";
 
-            auto f = util::bind_front(&packaged_action::parcel_write_handler,
-                this->shared_state_);
+            auto f = [=](
+                boost::system::error_code const& ec,
+                parcelset::parcel const& p) -> void {
+                    return parcel_write_handler(this->shared_state_, ec, p);
+                };
 
             naming::address addr_(this->resolve());
             naming::id_type cont_id(this->get_id(false));
@@ -153,8 +156,11 @@ namespace lcos {
                         << hpx::actions::detail::get_action_name<action_type>()
                         << ", " << id << ") args(" << sizeof...(Ts) << ")";
 
-            auto f = util::bind_front(&packaged_action::parcel_write_handler,
-                this->shared_state_);
+            auto f = [=](
+                boost::system::error_code const& ec,
+                parcelset::parcel const& p) -> void {
+                    return parcel_write_handler(this->shared_state_, ec, p);
+                };
 
             naming::address addr_(this->resolve());
             naming::id_type cont_id(this->get_id(false));
@@ -215,7 +221,7 @@ namespace lcos {
 
             typedef typename util::decay<Callback>::type callback_type;
 
-            auto f = bind_front(
+            auto f = util::bind_front(
                 &packaged_action::parcel_write_handler_cb<callback_type>,
                 util::protect(std::forward<Callback>(cb)), this->shared_state_);
 
@@ -317,17 +323,20 @@ namespace lcos {
                         << hpx::actions::detail::get_action_name<action_type>()
                         << ", " << id << ") args(" << sizeof...(Ts) << ")";
 
-            auto cb = util::bind_front(&packaged_action::parcel_write_handler,
-                this->shared_state_);
+            auto f = [=](
+                boost::system::error_code const& ec,
+                parcelset::parcel const& p) -> void {
+                    return parcel_write_handler(this->shared_state_, ec, p);
+                };
 
             naming::id_type cont_id(this->get_id(false));
             naming::detail::set_dont_store_in_cache(cont_id);
 
-            auto f = hpx::functional::apply_c_p_cb<action_type>(cont_id,
+            auto fut = hpx::functional::apply_c_p_cb<action_type>(cont_id,
                 std::move(addr), id, actions::action_priority<action_type>(),
-                std::move(cb), std::forward<Ts>(vs)...);
+                std::move(f), std::forward<Ts>(vs)...);
 
-            this->shared_state_->set_task(std::move(f));
+            this->shared_state_->set_task(std::move(fut));
         }
 
         template <typename Callback, typename... Ts>
@@ -340,18 +349,18 @@ namespace lcos {
 
             typedef typename util::decay<Callback>::type callback_type;
 
-            auto cb_ = util::bind_front(
+            auto f = util::bind_front(
                 &packaged_action::parcel_write_handler_cb<callback_type>,
                 util::protect(std::forward<Callback>(cb)), this->shared_state_);
 
             naming::id_type cont_id(this->get_id(false));
             naming::detail::set_dont_store_in_cache(cont_id);
 
-            auto f = hpx::functional::apply_c_p_cb<action_type>(cont_id,
+            auto fut = hpx::functional::apply_c_p_cb<action_type>(cont_id,
                 std::move(addr), id, actions::action_priority<action_type>(),
-                std::move(cb_), std::forward<Ts>(vs)...);
+                std::move(f), std::forward<Ts>(vs)...);
 
-            this->shared_state_->set_task(std::move(f));
+            this->shared_state_->set_task(std::move(fut));
         }
     };
 
