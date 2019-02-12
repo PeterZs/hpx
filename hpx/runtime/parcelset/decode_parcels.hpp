@@ -18,6 +18,7 @@
 #include <hpx/runtime/serialization/serialize.hpp>
 #include <hpx/runtime_fwd.hpp>
 #include <hpx/util/assert.hpp>
+#include <hpx/util/bind_front.hpp>
 #include <hpx/util/high_resolution_timer.hpp>
 #include <hpx/util/logging.hpp>
 
@@ -211,7 +212,7 @@ namespace hpx { namespace parcelset
                         {
                             // schedule all but the first parcel on a new thread.
                             hpx::applier::register_thread_nullary(
-                                util::one_shot(util::bind(
+                                util::one_shot(util::bind_front(
                                     [num_thread](parcel&& p)
                                     {
                                         p.schedule_action(num_thread);
@@ -288,7 +289,7 @@ namespace hpx { namespace parcelset
 //         if(hpx::is_running() && parcelport.async_serialization())
 //         {
 //             hpx::applier::register_thread_nullary(
-//                 util::one_shot(util::bind(
+//                 util::one_shot(util::bind_front(
 //                     &decode_message<Parcelport, Buffer>,
 //                     std::ref(parcelport), std::move(buffer), 1, num_thread)),
 //                 "decode_parcels",
@@ -307,7 +308,7 @@ namespace hpx { namespace parcelset
 //         if(hpx::is_running() && parcelport.async_serialization())
 //         {
 //             hpx::applier::register_thread_nullary(
-//                 util::one_shot(util::bind(
+//                 util::one_shot(util::bind_front(
 //                     &decode_message<Parcelport, Buffer>,
 //                     std::ref(parcelport), std::move(buffer), 0, num_thread)),
 //                 "decode_parcels",
