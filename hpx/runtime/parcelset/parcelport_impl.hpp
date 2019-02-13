@@ -416,9 +416,10 @@ namespace hpx { namespace parcelset
             put_parcel(
                 dest
               , std::move(p)
-              , [=](boost::system::error_code const& ec, parcel const & p) -> void {
-                    return early_pending_parcel_handler(ec, p);
-                }
+              , util::bind_front(
+                    &parcelport::early_pending_parcel_handler
+                  , this
+                )
             );
         }
 

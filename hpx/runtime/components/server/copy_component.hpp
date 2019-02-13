@@ -12,6 +12,7 @@
 #include <hpx/runtime/get_ptr.hpp>
 #include <hpx/runtime/naming/name.hpp>
 #include <hpx/traits/get_remote_result.hpp>
+#include <hpx/util/bind_back.hpp>
 
 #include <memory>
 
@@ -25,7 +26,7 @@ namespace hpx { namespace components { namespace server
         // one, we can avoid doing serialization.
         template <typename Component>
         naming::id_type copy_component_here_postproc(
-            std::shared_ptr<Component> ptr)
+            future<std::shared_ptr<Component> > f)
         {
             // This is executed on the locality where the component lives.
             hpx::components::server::runtime_support* rts =
@@ -33,16 +34,17 @@ namespace hpx { namespace components { namespace server
 
             return traits::get_remote_result<
                     id_type, naming::gid_type
-                >::call(rts->copy_create_component<Component>(ptr, true));
+                >::call(rts->copy_create_component<Component>(f.get(), true));
         }
 
         template <typename Component>
         naming::id_type copy_component_postproc(
-            std::shared_ptr<Component> ptr,
+            future<std::shared_ptr<Component> > f,
             naming::id_type const& target_locality)
         {
             using stubs::runtime_support;
 
+            std::shared_ptr<Component> ptr = f.get();
             if (!target_locality || target_locality == find_here())
             {
                 // This is executed on the locality where the component lives,
@@ -67,10 +69,7 @@ namespace hpx { namespace components { namespace server
     {
         future<std::shared_ptr<Component> > f =
             get_ptr<Component>(to_copy);
-        return f.then(
-            [=](future<std::shared_ptr<Component> > f) -> naming::id_type {
-                return detail::copy_component_here_postproc(f.get());
-            });
+        return f.then(&detail::copy_component_here_postproc<Component>);
     }
 
     template <typename Component>
@@ -79,10 +78,8 @@ namespace hpx { namespace components { namespace server
     {
         future<std::shared_ptr<Component> > f =
             get_ptr<Component>(to_copy);
-        return f.then(
-            [=](future<std::shared_ptr<Component> > f) -> naming::id_type {
-                return detail::copy_component_postproc(f.get(), target_locality);
-            });
+        return f.then(util::bind_back(&detail::copy_component_postproc<Component>,
+            target_locality));
     }
 
     template <typename Component>

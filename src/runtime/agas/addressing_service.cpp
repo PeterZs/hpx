@@ -1574,10 +1574,14 @@ void addressing_service::decref(
     if (HPX_UNLIKELY(nullptr == threads::get_self_ptr()))
     {
         // reschedule this call as an HPX thread
+        void (addressing_service::*decref_ptr)(
+            naming::gid_type const&
+          , std::int64_t
+          , error_code&
+        ) = &addressing_service::decref;
+
         threads::register_thread_nullary(
-            [=]() -> void {
-                return decref(raw, credit, throws);
-            },
+            util::deferred_call(decref_ptr, this, raw, credit, std::ref(throws)),
             "addressing_service::decref", threads::pending, true,
             threads::thread_priority_normal,
             threads::thread_schedule_hint(),
@@ -1839,10 +1843,13 @@ void addressing_service::update_cache_entry(
         {
             return;
         }
+        void (addressing_service::*update_cache_entry_ptr)(
+            naming::gid_type const&
+          , gva const &
+          , error_code&
+        ) = &addressing_service::update_cache_entry;
         threads::register_thread_nullary(
-            [=]() -> void {
-                return update_cache_entry(id, g, throws);
-            },
+            util::deferred_call(update_cache_entry_ptr, this, id, g, std::ref(throws)),
             "addressing_service::update_cache_entry", threads::pending, true,
             threads::thread_priority_normal,
             threads::thread_schedule_hint(),

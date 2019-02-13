@@ -196,10 +196,8 @@ namespace hpx { namespace parcelset
         ///                 id (if not already set).
         HPX_FORCEINLINE void put_parcel(parcel p)
         {
-            put_parcel(std::move(p), [=](
-                boost::system::error_code const& ec, parcel const & p) -> void {
-                    return invoke_write_handler(ec, p);
-                });
+            put_parcel(std::move(p), util::bind_front(
+                &parcelhandler::invoke_write_handler, this));
         }
 
         /// A parcel is submitted for transport at the source locality site to
@@ -234,10 +232,8 @@ namespace hpx { namespace parcelset
         ///                 id (if not already set).
         void put_parcels(std::vector<parcel> parcels)
         {
-            std::vector<write_handler_type> handlers(parcels.size(), [=](
-                boost::system::error_code const& ec, parcel const & p) -> void {
-                    return invoke_write_handler(ec, p);
-                });
+            std::vector<write_handler_type> handlers(parcels.size(),
+                util::bind_front(&parcelhandler::invoke_write_handler, this));
 
             put_parcels(std::move(parcels), std::move(handlers));
         }
