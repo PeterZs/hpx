@@ -753,6 +753,19 @@ namespace hpx { namespace serialization
 /**/
 
 ///////////////////////////////////////////////////////////////////////////////
+#if defined(HPX_COMPUTE_DEVICE_CODE)
+#define HPX_ACTION_USES_STACK(action, size)                                   \
+/**/
+
+#define HPX_ACTION_USES_SMALL_STACK(action)                                   \
+/**/
+#define HPX_ACTION_USES_MEDIUM_STACK(action)                                  \
+/**/
+#define HPX_ACTION_USES_LARGE_STACK(action)                                   \
+/**/
+#define HPX_ACTION_USES_HUGE_STACK(action)                                    \
+/**/
+#else
 #define HPX_ACTION_USES_STACK(action, size)                                   \
     namespace hpx { namespace traits                                          \
     {                                                                         \
@@ -776,6 +789,8 @@ namespace hpx { namespace serialization
 #define HPX_ACTION_USES_HUGE_STACK(action)                                    \
     HPX_ACTION_USES_STACK(action, threads::thread_stacksize_huge)             \
 /**/
+#endif
+
 // This macro is deprecated. It expands to an inline function which will emit a
 // warning.
 #define HPX_ACTION_DOES_NOT_SUSPEND(action)                                   \
@@ -872,9 +887,14 @@ namespace hpx { namespace serialization
 /// defined using one of the \a HPX_DEFINE_COMPONENT_ACTION macros. It has to
 /// be visible in all translation units using the action, thus it is
 /// recommended to place it into the header file defining the component.
+#if defined(HPX_COMPUTE_DEVICE_CODE)
+#define HPX_REGISTER_ACTION_DECLARATION(...)                                  \
+/**/
+#else
 #define HPX_REGISTER_ACTION_DECLARATION(...)                                  \
     HPX_REGISTER_ACTION_DECLARATION_(__VA_ARGS__)                             \
 /**/
+#endif
 
 /// \def HPX_REGISTER_ACTION(action)
 ///
@@ -904,9 +924,14 @@ namespace hpx { namespace serialization
 ///       \a HPX_REGISTER_ACTION_ID should be used for a particular action,
 ///       never both.
 ///
+#if defined(HPX_COMPUTE_DEVICE_CODE)
+#define HPX_REGISTER_ACTION(...)                                              \
+/**/
+#else
 #define HPX_REGISTER_ACTION(...)                                              \
     HPX_REGISTER_ACTION_(__VA_ARGS__)                                         \
 /**/
+#endif
 
 /// \def HPX_REGISTER_ACTION_ID(action, actionname, actionid)
 ///

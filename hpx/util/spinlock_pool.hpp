@@ -42,7 +42,11 @@ namespace hpx { namespace util
         };
 #endif
 #if defined(HPX_HAVE_CXX11_ALIGNAS)
+#if defined(HPX_COMPUTE_DEVICE_CODE) || defined(HPX_COMPUTE_HOST_CODE)
+        struct alignas(64) spinlock_holder
+#else
         struct alignas(threads::get_cache_line_size()) spinlock_holder
+#endif
         {
             boost::detail::spinlock lock;
         };

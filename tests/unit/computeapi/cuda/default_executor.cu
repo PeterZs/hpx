@@ -4,7 +4,39 @@
 //  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include <hpx/hpx_init.hpp>
-#include <hpx/include/lcos.hpp>
+// #include <hpx/include/lcos.hpp>
+
+#include <hpx/config.hpp>
+#include <hpx/include/actions.hpp>
+
+#include <hpx/lcos/base_lco.hpp>
+#include <hpx/lcos/base_lco_with_value.hpp>
+
+#include <hpx/lcos/packaged_action.hpp>
+
+#include <hpx/lcos/barrier.hpp>
+#include <hpx/lcos/channel.hpp>
+#include <hpx/lcos/gather.hpp>
+#include <hpx/lcos/latch.hpp>
+#if defined(HPX_HAVE_QUEUE_COMPATIBILITY)
+#include <hpx/lcos/queue.hpp>
+#endif
+#include <hpx/lcos/reduce.hpp>
+
+#include <hpx/include/async.hpp>
+#include <hpx/include/dataflow.hpp>
+#include <hpx/include/local_lcos.hpp>
+#include <hpx/lcos/split_future.hpp>
+#include <hpx/lcos/wait_all.hpp>
+#include <hpx/lcos/wait_any.hpp>
+#include <hpx/lcos/wait_each.hpp>
+#include <hpx/lcos/wait_some.hpp>
+#include <hpx/lcos/when_all.hpp>
+#include <hpx/lcos/when_any.hpp>
+#include <hpx/lcos/when_each.hpp>
+#include <hpx/lcos/when_some.hpp>
+//////
+
 #include <hpx/include/parallel_executors.hpp>
 #include <hpx/util/lightweight_test.hpp>
 
