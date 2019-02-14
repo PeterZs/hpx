@@ -10,6 +10,7 @@
 #include <hpx/config.hpp>
 #include <hpx/lcos/local/once.hpp>
 #include <hpx/util/assert.hpp>
+#include <hpx/util/bind.hpp>
 #include <hpx/util/static_reinit.hpp>
 
 #include <cstddef>
@@ -75,17 +76,15 @@ namespace hpx { namespace lcos { namespace local
         {
             default_construct();
             util::reinit_register(
-                &reinitializable_static::default_construct,
-                &destruct);
+                &reinitializable_static::default_construct, &destruct);
         }
 
         template <typename U>
         static void value_constructor(U const* pv)
         {
             value_construct(*pv);
-            util::reinit_register(
-                [=]() -> void { value_construct(*pv); },
-                &destruct);
+            util::reinit_register(util::bind(
+                &reinitializable_static::value_construct<U>, *pv), &destruct);
         }
 
     public:
@@ -103,9 +102,9 @@ namespace hpx { namespace lcos { namespace local
         reinitializable_static(U const& val)
         {
             // do not rely on ADL to find the proper call_once
-            lcos::local::call_once(constructed_, [&]() -> void {
-                return value_constructor(std::addressof(val));
-            });
+            lcos::local::call_once(constructed_,
+                util::bind(&reinitializable_static::value_constructor<U>,
+                    std::addressof(val)));
         }
 
         operator reference()

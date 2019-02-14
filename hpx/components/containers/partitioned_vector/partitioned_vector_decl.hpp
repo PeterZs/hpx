@@ -254,11 +254,11 @@ namespace hpx
         // Connect this vector to the existing vector using the given symbolic
         // name.
         void get_data_helper(id_type id,
-            server::partitioned_vector_config_data data);
+            future<server::partitioned_vector_config_data> && f);
 
         // this will be called by the base class once the registered id becomes
         // available
-        future<void> connect_to_helper(id_type id);
+        future<void> connect_to_helper(shared_future<id_type> && f);
 
     public:
         future<void> connect_to(std::string const& symbolic_name);
@@ -337,7 +337,9 @@ namespace hpx
         create_helper2(DistPolicy const& policy, std::size_t count,
             std::size_t size, T const& val);
 
-        struct get_ptr_helper;
+        static void get_ptr_helper(std::size_t loc,
+            partitions_vector_type& partitions,
+            future<std::shared_ptr<partitioned_vector_partition_server> > && f);
 
         // This function is called when we are creating the vector. It
         // initializes the partitions based on the give parameters.

@@ -21,6 +21,7 @@
 #include <hpx/runtime/serialization/vector.hpp>
 #include <hpx/traits/is_distribution_policy.hpp>
 #include <hpx/util/assert.hpp>
+#include <hpx/util/bind_front.hpp>
 
 #include <hpx/components/containers/container_distribution_policy.hpp>
 #include <hpx/components/containers/unordered/partition_unordered_map_component.hpp>
@@ -307,22 +308,23 @@ namespace hpx
         // Connect this unordered_map to the existing unordered_mapusing the
         // given symbolic name.
         void get_data_helper(id_type id,
-            server::unordered_map_config_data data)
+            future<server::unordered_map_config_data> && f)
         {
+            server::unordered_map_config_data data = f.get();
+
             std::swap(partitions_, data.partitions_);
             base_type::reset(std::move(id));
         }
 
         // this will be called by the base class once the registered id becomes
         // available
-        future<void> connect_to_helper(id_type id)
+        future<void> connect_to_helper(future<id_type> && f)
         {
             typedef typename base_type::server_component_type::get_action act;
 
+            id_type id = f.get();
             return async(act(), id).then(
-                [=](future<server::unordered_map_config_data> && f) -> void {
-                    get_data_helper(id, f.get());
-                });
+                util::bind_front(&unordered_map::get_data_helper, this, id));
         }
 
         ///////////////////////////////////////////////////////////////////////
@@ -343,17 +345,12 @@ namespace hpx
         }
 
         ///////////////////////////////////////////////////////////////////////
-        struct get_ptr_helper
+        static void get_ptr_helper(std::size_t loc,
+            partitions_vector_type& partitions,
+            future<std::shared_ptr<partition_unordered_map_server> > && f)
         {
-            std::size_t loc;
-            partitions_vector_type& partitions;
-
-            void operator()(
-                future<std::shared_ptr<partition_unordered_map_server> > && f) const
-            {
-                partitions[loc].local_data_ = f.get();
-            }
-        };
+            partitions[loc].local_data_ = f.get();
+        }
 
         /// \cond NOINTERNAL
         typedef std::pair<hpx::id_type, std::vector<hpx::id_type> >
@@ -378,7 +375,11 @@ namespace hpx
                     {
                         ptrs.push_back(
                             get_ptr<partition_unordered_map_server>(id).then(
-                                get_ptr_helper{l, partitions_}));
+                                util::bind_front(&unordered_map::get_ptr_helper,
+                                    l, std::ref(partitions_)
+                                )
+                            )
+                        );
                     }
                     ++l;
                 }
@@ -456,7 +457,8 @@ namespace hpx
                 {
                     ptrs.push_back(get_ptr<partition_unordered_map_server>(
                         partitions[i].partition_.get()).then(
-                            get_ptr_helper{i, partitions}));
+                            util::bind_front(&unordered_map::get_ptr_helper,
+                                i, std::ref(partitions))));
                 }
             }
 
@@ -469,9 +471,7 @@ namespace hpx
         future<void> connect_to(std::string const& symbolic_name)
         {
             return base_type::connect_to(symbolic_name,
-                [=](future<id_type> && f) -> future<void> {
-                    return connect_to_helper(f.get());
-                });
+                util::bind_front(&unordered_map::connect_to_helper, this));
         }
 
         // Register this unordered_map with AGAS using the given symbolic name
